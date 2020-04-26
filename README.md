@@ -1,10 +1,12 @@
 # location-snr-ellipisicity_extraction
-three mainly function: get the coordinates of stars in the fits   get the SNR of the fitsget the Ellipisicity of stars in the fits
+The code used to process astronomical images about .fit*.
+three mainly function: 
+  get the coordinates of stars in the fits   
+  get the SNR of the fits
+  get the Ellipisicity of stars in the fits
 ## Requrie
-* Python3
-* numpy
-* astropy
-* sys,os,glob ,math,scipy,itertools
+* Python3,numpyt,astropy,sys,os,glob ,math,scipy,itertools
+* Input .fit* with the same length and width
 ## Test
 ```
   cd /demo/
