@@ -18,20 +18,36 @@ class PSFExtractor():
         get the SNR of the fits
         get the Ellipisicity of stars in the fits
     '''
-    def __init__(self, path, save, mesh, mode = 8):
-        self.path = path + '/*.fit*'
-        self.save = save
-        self.mesh = mesh
+    def __init__(self, path=None, save=None, mesh=None, mode = None, getfile=None, create_save=None):
+        if path is not None:
+            self.path = path + '/*.fit*'
+        else:
+            self.path = None
+        if save is not None:
+            self.save = save
+        else:
+            self.save = None
+        if mesh is not None:
+            self.mesh = mesh
+        else:
+            self.mesh = None
         # The connected domain's mode is 8.
-        self.mode = mode
+        if mode is not None:
+            self.mode = mode
+        else:
+            self.mode = None
         # The number of fits in input path. The default is 0
         self.counts = 0
         # Value can get other number, let it equal to 3 in threshold of the project
         self.value = 3
         # Get the list of each fits' path
-        self.fitfile = self.get_fitfile()
+        if getfile is not None:
+            self.fitfile = self.get_fitfile()
+        else:
+            self.fitfile = None
         # Determines the TXT file save path
-        self.creat_save()
+        if create_save is not None:
+            self.creat_save()
 
     # Main function used to get the list of each fits' path
     def get_fitfile(self):
@@ -363,27 +379,46 @@ class PSFExtractor():
 
     # -----------------------------------------------------------------------------------------------
     # Function definition SNR is used to calculate SNR of images
-    def get_snr(self, sigmacut=1):
+    def get_snr(self, fitsin=True, img=False, sigmacut=1):
         # Ref to lucky imaging paper by Staley
         # https://www.ast.cam.ac.uk/sites/default/files/SPIE_7735-211_010710.pdf
         # Equation 5
         # Data reduction strategies for lucky imaging
+        # fitsin is to check whether we use fits file or direct use matrix
+        # if true, will use the self.fitfile
+        # if False, will use img
         # img is the observational data 2D ndarray
         # sigmacut is the value used to cut background
-        for fit in self.fitfile:
-            hdul = fits.open(fit)
-            img = hdul[0].data
+        if fitsin is True:
+            for fit in self.fitfile:
+                #TODO: A child function is required to set this part aside
+                hdul = fits.open(fit)
+                img = hdul[0].data
+                totalflux = np.sum(img)
+                # Calculate the mean flux of all
+                meanflux = np.mean(img)
+                # Calculate the background with one sigma clipped
+                imgsigma = np.var(img) ** 0.5 * sigmacut
+                # Calculate the background contribution
+                backtotal = np.mean(img[img <= imgsigma + meanflux]) * np.shape(img)[0] * np.shape(img)[1]
+                # Calculate the background sigma contribution (background possion noise contribution)
+                backsigma = np.var(img[img <= imgsigma + meanflux]) * np.shape(img)[0] * np.shape(img)[1]
+                # Calculate the snr,backdigma is varriance
+                finalsnr = (totalflux - backtotal) / (backsigma) ** 0.5
+        else:
             totalflux = np.sum(img)
-            # Calculate the mean flux of all
+            #Calculate mean flux of all
             meanflux = np.mean(img)
-            # Calculate the background with one sigma clipped
+            #Calculate the background with one sigma clipped
             imgsigma = np.var(img) ** 0.5 * sigmacut
             # Calculate the background contribution
             backtotal = np.mean(img[img <= imgsigma + meanflux]) * np.shape(img)[0] * np.shape(img)[1]
             # Calculate the background sigma contribution (background possion noise contribution)
             backsigma = np.var(img[img <= imgsigma + meanflux]) * np.shape(img)[0] * np.shape(img)[1]
-            # Calculate the snr,backdigma is varriance
-            print( (totalflux - backtotal) / (backsigma) ** 0.5)
+            finalsnr = (totalflux - backtotal) / (backsigma) ** 0.5
+        #Return final results
+        return finalsnr
+            
 
     # -----------------------------------------------------------------------------------------------
     # Function defintion the following function is used to calculate the Ellipicity under KSB Model
